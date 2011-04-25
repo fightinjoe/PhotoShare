@@ -38,6 +38,9 @@ class Flickr(PhotoService):
         url    = self._request_url( api_method, params )
         result = urlfetch.fetch(url)
 
+        # log.info( url )
+        # log.info( result.content )
+
         if result.status_code == 200:
             dom = minidom.parseString(result.content)
             return fn( dom )
@@ -46,7 +49,7 @@ class Flickr(PhotoService):
         fn = lambda d: d.getElementsByTagName("token")[0].childNodes[0].data
         return self.call( 'flickr.auth.getToken', {'frob':frob}, fn, auth=False )
 
-    def get_contact_list( self, filter='both', page=1, per_page=1000 ):
+    def get_contact_list( self, type_filter='both', page=1, per_page=1000 ):
         def fn(d):
             out = []
             for contact in d.getElementsByTagName('contact'):
@@ -54,17 +57,17 @@ class Flickr(PhotoService):
                     'nsid'     : contact.attributes['nsid'].value,
                     'username' : contact.attributes['username'].value,
                     'realname' : contact.attributes['realname'].value,
-                    'friend'   : True if (contact.attributes['friend'].value == 1) else False,
-                    'family'   : True if (contact.attributes['family'].value == 1) else False
+                    'friend'   : True if (contact.attributes['friend'].value == "1") else False,
+                    'family'   : True if (contact.attributes['family'].value == "1") else False
                 })
             return out
-        return self.call('flickr.contacts.getList', {'filter':filter,'page':page,'per_page':per_page}, fn)
+        return self.call('flickr.contacts.getList', {'filter':type_filter,'page':page,'per_page':per_page}, fn)
 
     def sign( self, params ):
         # Sort your argument list into alphabetical order based on the parameter name.
         args = []
         for key in params:
-            args.append( key + params[key] )
+            args.append( str(key) + str(params[key]) )
         args.sort()
 
         # concatenate the shared secret and argument name-value pairs e.g. SECRETbar2baz3foo1
