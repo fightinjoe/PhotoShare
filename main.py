@@ -22,6 +22,7 @@ from photo_service import PhotoService
 from flickr        import Flickr
 
 import helpers as h
+import logging as log
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
@@ -37,12 +38,18 @@ class MainHandler(webapp.RequestHandler):
 class TokenHandler(webapp.RequestHandler):
     # callback URL for web authentication
     def get(self):
-        service = h.param(self, 'service')
-        if service == 'flickr':
-            token = Flickr.get_token_from_frob( h.param(self, 'frob') )
-            PhotoService.update_or_create({ 'token':token, 'owner':user, 'name':'flickr' })
+        user = h.get_user_or_redirect( self )
+        if not user: return
 
-        self.redirect( '/' )
+        service = h.param(self, 'service')
+        t = None
+        if service == 'flickr':
+            token = Flickr().get_token_from_frob( h.param(self, 'frob') )
+            t = Flickr.update_or_create( { 'token':token, 'owner':user } )
+
+        # self.redirect( '/' )
+        self.response.headers['Content-Type'] = 'text/plain'
+        self.response.out.write( str(t) )
 
 def main():
     application = webapp.WSGIApplication([('/', MainHandler), ('/token', TokenHandler)],

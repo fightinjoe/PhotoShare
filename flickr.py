@@ -1,6 +1,7 @@
 import hashlib
-from photo_service import PhotoService
+import logging as log
 
+from photo_service        import PhotoService
 from google.appengine.api import urlfetch
 from xml.dom              import minidom
 
@@ -11,16 +12,16 @@ class Flickr(PhotoService):
     # perms can be 'read', 'write', or 'delete'
     def auth_url( self, perms="read" ):
         # http://flickr.com/services/auth/?api_key=[api_key]&perms=[perms]&api_sig=[api_sig]
-        ps        = {'api':self.api_key, 'perms':perms}
+        ps        = {'api_key':self.api_key, 'perms':perms}
         ps['sig'] = self.sign( ps )
-        url       = "http://flickr.com/services/auth/?api_key=%(api)s&perms=%(perms)s&api_sig=%(sig)s" % ps
+        url       = "http://flickr.com/services/auth/?api_key=%(api_key)s&perms=%(perms)s&api_sig=%(sig)s" % ps
         return url
 
     # Generates the URL for the REST-based API
     def _request_url( self, method, params, sign=True ):
         # http://api.flickr.com/services/rest/?method=flickr.test.echo&name=value
         url = "http://api.flickr.com/services/rest/?"
-        params.update( {'method':method, 'api_key':self.api_key} )
+        params.update( {"method":method, "api_key":self.api_key} )
         if(sign):
             params.update( {'api_sig': self.sign(params)} )
 
@@ -42,8 +43,8 @@ class Flickr(PhotoService):
             return fn( dom )
 
     def get_token_from_frob( self, frob ):
-        fn = lambda d: d.getElementsByTagName("token")[0].data
-        Flickr.call( 'flickr.auth.getToken', {'frob':frob, 'auth':False}, fn )
+        fn = lambda d: d.getElementsByTagName("token")[0].childNodes[0].data
+        return self.call( 'flickr.auth.getToken', {'frob':frob}, fn, auth=False )
 
     def get_contact_list( self, filter='both', page=1, per_page=1000 ):
         def fn(d):
@@ -57,7 +58,7 @@ class Flickr(PhotoService):
                     'family'   : True if (contact.attributes['family'].value == 1) else False
                 })
             return out
-        return Flickr.call('flickr.contacts.getList', {'filter':filter,'page':page,'per_page':per_page}, fn)
+        return self.call('flickr.contacts.getList', {'filter':filter,'page':page,'per_page':per_page}, fn)
 
     def sign( self, params ):
         # Sort your argument list into alphabetical order based on the parameter name.
@@ -68,7 +69,6 @@ class Flickr(PhotoService):
 
         # concatenate the shared secret and argument name-value pairs e.g. SECRETbar2baz3foo1
         pre_sig = self.secret + ''.join(args)
-        # print pre_sig
 
         # calculate the md5() hash of this string
         # append this value to the argument list with the name api_sig, in hexidecimal string form
