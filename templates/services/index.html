@@ -11,9 +11,10 @@
       <ul>
         <li><a href="{{ flickr_auth }}">Flickr authentication</a></li>
         <li><a href="{{ facebook_auth }}">Facebook authentication</a>
+          <p>- <a href="/download?service=facebook&type=people">Download Friends</a></p>
           <ul>
             {% for friend in facebook_friends %}
-              <li><a href="/photos?id={{ friend.id }}">{{ friend.name }}</a></li>
+              <li><a href="/photos?service=facebook&user_id={{ friend.id }}">{{ friend.name }}</a></li>
             {% endfor %}
           </ul>
         </li>

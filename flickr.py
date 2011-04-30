@@ -1,14 +1,14 @@
 import hashlib
 import logging as log
 
-from photo_service        import PhotoService
+from photo_service        import Token
 from google.appengine.api import urlfetch
 from xml.dom              import minidom
 
-class FlickrToken(PhotoService):
+class FlickrToken(Token):
     service = 'flickr'
 
-class Flickr(PhotoService):
+class Flickr():
     api_key = "774045fbbf44e95eff9cb4e3165a3ec2"
     secret  = "e0a879fe2e07f786"
 

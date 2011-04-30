@@ -18,9 +18,10 @@ from google.appengine.api        import users, urlfetch
 from google.appengine.ext        import webapp
 from google.appengine.ext.webapp import util
 
-from photo_service import PhotoService
 from flickr        import Flickr
 import facebook
+
+from photo_service import Person
 
 import helpers as h
 import logging as log
@@ -32,15 +33,12 @@ class MainHandler(webapp.RequestHandler):
         user = h.get_user_or_redirect( self )
         if not user: return
 
-        fb_friends = []
-        fb_token   = facebook.FacebookToken.for_user(user)
-        if fb_token:
-            fb_friends = facebook.get_friends( fb_token )['data']
+        fb_friends = facebook.FacebookPerson.gql("WHERE owner = USER(:1)", user.nickname())
 
         template_values = h.template_params( self, user, **{
-            'flickr_auth'   : Flickr().auth_url(),
-            'facebook_auth' : facebook.auth_url(),
-            'facebook_friends' : fb_friends
+            'flickr_auth'       : Flickr().auth_url(),
+            'facebook_auth'     : facebook.auth_url(),
+            'facebook_friends'  : fb_friends
         } )
 
         h.render_template( self, 'services/index.html', template_values )
@@ -64,9 +62,58 @@ class TokenHandler(webapp.RequestHandler):
         # self.response.headers['Content-Type'] = 'text/plain'
         # self.response.out.write( str(t) )
 
+class PhotoHandler(webapp.RequestHandler):
+    def get(self):
+        user = h.get_user_or_redirect( self )
+        if not user: return
+
+        user_id = h.param(self,'user_id')
+        service = h.param(self, 'service')
+        
+        person = Person.gql("WHERE id = :1 AND owner = USER(:2)", user_id, user.nickname())[0]
+
+        template_values = h.template_params( self, user, **{ 'person' : person })
+
+        if service == 'facebook':
+            fb_photos = person.photos.filter('class =', 'FacebookPhoto')
+            fb_token  = facebook.FacebookToken.for_user(user)
+            if fb_token:
+                fb_photos = fb_photos
+                template_values['photos'] = fb_photos
+            else:
+                print "no token"
+        else:
+            print "no service"
+
+        h.render_template( self, 'photos/index.html', template_values )
+
+class DownloadHandler(webapp.RequestHandler):
+    def get(self):
+        user = h.get_user_or_redirect( self )
+        if not user: return
+        token = facebook.FacebookToken.for_user( user )
+
+        service = h.param(self, 'service')
+        type    = h.param(self, 'type')
+
+        if service == 'facebook':
+            if type == 'photos': # tagged photos
+                user_id = h.param(self, 'user_id')
+                facebook.import_photos( user_id, user, token )
+                self.redirect("/photos?service=facebook&user_id="+user_id)
+            elif type == 'people':
+                facebook.import_people( user, token )
+                self.redirect("/")
+            # elif type == 'album'
+
+
 def main():
-    application = webapp.WSGIApplication([('/', MainHandler), ('/token', TokenHandler)],
-                                         debug=True)
+    application = webapp.WSGIApplication([
+        ('/',         MainHandler),
+        ('/token',    TokenHandler),
+        ('/photos',   PhotoHandler),
+        ('/download', DownloadHandler)],
+        debug=True)
     util.run_wsgi_app(application)
 
 if __name__ == '__main__':

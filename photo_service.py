@@ -2,7 +2,7 @@ from google.appengine.ext    import db
 from google.appengine.ext.db import polymodel
 from google.appengine.api    import users
 
-class PhotoService( polymodel.PolyModel ):
+class Token( polymodel.PolyModel ):
     owner  = db.UserProperty()
     token  = db.StringProperty()
 
@@ -31,3 +31,40 @@ class PhotoService( polymodel.PolyModel ):
             return token[0]
         else:
             return None
+
+class Person( polymodel.PolyModel ):
+    id    = db.StringProperty()
+    name  = db.StringProperty()
+    owner = db.UserProperty()
+
+    @classmethod
+    def keygen(klass, name, owner):
+        return "_".join( id, name, owner.user_id() )
+
+class Album( polymodel.PolyModel ):
+    owner     = db.ReferenceProperty(Person, collection_name='albums')
+
+    title     = db.StringProperty()
+    desc      = db.StringProperty()
+    latitude  = db.FloatProperty()
+    longitude = db.FloatProperty()
+            
+class Photo( polymodel.PolyModel ):
+    owner      = db.ReferenceProperty(Person, collection_name='photos')
+    album      = db.ReferenceProperty(Album,  collection_name='photos')
+
+    id         = db.StringProperty()
+    title      = db.StringProperty( multiline=True )
+    desc       = db.StringProperty()
+    square_url = db.StringProperty()
+    thumb_url  = db.StringProperty()
+    full_url   = db.StringProperty()
+    taken_on   = db.DateTimeProperty()
+    width      = db.IntegerProperty()
+    height     = db.IntegerProperty()
+    latitude   = db.FloatProperty()
+    longitude  = db.FloatProperty()
+
+    @classmethod
+    def keygen( klass, type, owner, id, **misc ):
+        return "_".join([ type, owner.id, id ])
