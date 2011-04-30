@@ -5,6 +5,9 @@ from photo_service        import PhotoService
 from google.appengine.api import urlfetch
 from xml.dom              import minidom
 
+class FlickrToken(PhotoService):
+    service = 'flickr'
+
 class Flickr(PhotoService):
     api_key = "774045fbbf44e95eff9cb4e3165a3ec2"
     secret  = "e0a879fe2e07f786"
@@ -45,7 +48,7 @@ class Flickr(PhotoService):
             dom = minidom.parseString(result.content)
             return fn( dom )
 
-    def get_token_from_frob( self, frob ):
+    def get_auth_token( self, frob ):
         fn = lambda d: d.getElementsByTagName("token")[0].childNodes[0].data
         return self.call( 'flickr.auth.getToken', {'frob':frob}, fn, auth=False )
 
