@@ -10,6 +10,13 @@
       <h1>Logged in as {{ user.nickname }}</h1>
       <ul>
         <li><a href="{{ flickr_auth }}">Flickr authentication</a></li>
+        <li><a href="{{ facebook_auth }}">Facebook authentication</a>
+          <ul>
+            {% for friend in facebook_friends %}
+              <li><a href="/photos?id={{ friend.id }}">{{ friend.name }}</a></li>
+            {% endfor %}
+          </ul>
+        </li>
       </ul>
     </div>
   </body>

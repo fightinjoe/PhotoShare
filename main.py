@@ -14,23 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from google.appengine.api        import users
+from google.appengine.api        import users, urlfetch
 from google.appengine.ext        import webapp
 from google.appengine.ext.webapp import util
 
 from photo_service import PhotoService
 from flickr        import Flickr
+import facebook
 
 import helpers as h
 import logging as log
+import cgi
+import urllib
 
 class MainHandler(webapp.RequestHandler):
     def get(self):
         user = h.get_user_or_redirect( self )
         if not user: return
 
+        fb_friends = []
+        fb_token   = facebook.FacebookToken.for_user(user)
+        if fb_token:
+            fb_friends = facebook.get_friends( fb_token )['data']
+
         template_values = h.template_params( self, user, **{
-            'flickr_auth' : Flickr().auth_url()
+            'flickr_auth'   : Flickr().auth_url(),
+            'facebook_auth' : facebook.auth_url(),
+            'facebook_friends' : fb_friends
         } )
 
         h.render_template( self, 'services/index.html', template_values )
@@ -44,12 +54,15 @@ class TokenHandler(webapp.RequestHandler):
         service = h.param(self, 'service')
         t = None
         if service == 'flickr':
-            token = Flickr().get_token_from_frob( h.param(self, 'frob') )
+            token = Flickr().get_auth_token( h.param(self, 'frob') )
             t = Flickr.update_or_create( { 'token':token, 'owner':user } )
+        elif service == 'facebook':
+            token = facebook.get_auth_token( h.param(self,'code') )
+            t = facebook.FacebookToken.update_or_create( { 'token':token, 'owner':user } )
 
-        # self.redirect( '/' )
-        self.response.headers['Content-Type'] = 'text/plain'
-        self.response.out.write( str(t) )
+        self.redirect( '/' )
+        # self.response.headers['Content-Type'] = 'text/plain'
+        # self.response.out.write( str(t) )
 
 def main():
     application = webapp.WSGIApplication([('/', MainHandler), ('/token', TokenHandler)],

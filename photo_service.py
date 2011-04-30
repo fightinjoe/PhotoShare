@@ -23,3 +23,11 @@ class PhotoService( polymodel.PolyModel ):
             service.put()
 
         return service
+
+    @classmethod
+    def for_user( klass, user ):
+        token = klass.gql("WHERE owner = USER(:1)", user.nickname())
+        if token.count > 0:
+            return token[0]
+        else:
+            return None
