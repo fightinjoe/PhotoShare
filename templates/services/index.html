@@ -9,7 +9,14 @@
     <div id="meat">
       <h1>Logged in as {{ user.nickname }}</h1>
       <ul>
-        <li><a href="{{ flickr_auth }}">Flickr authentication</a></li>
+        <li><a href="{{ flickr_auth }}">Flickr authentication</a>
+          <p>- <a href="/download?service=flickr&type=people">Download Friends</a></p>
+          <ul>
+            {% for friend in flickr_friends %}
+              <li><a href="/photos?service=flickr&user_id={{ friend.id }}">{{ friend.name }} ({{ friend.nick }})</a></li>
+            {% endfor %}
+          </ul>
+        </li>
         <li><a href="{{ facebook_auth }}">Facebook authentication</a>
           <p>- <a href="/download?service=facebook&type=people">Download Friends</a></p>
           <ul>

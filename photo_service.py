@@ -35,6 +35,7 @@ class Token( polymodel.PolyModel ):
 class Person( polymodel.PolyModel ):
     id    = db.StringProperty()
     name  = db.StringProperty()
+    nick  = db.StringProperty()
     owner = db.UserProperty()
 
     @classmethod

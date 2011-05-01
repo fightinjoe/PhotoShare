@@ -1,4 +1,4 @@
-from credentials          import facebook_app_id, facebook_api_secret
+from credentials          import facebook_api_key, facebook_secret
 from photo_service        import Token, Photo, Album, Person
 from google.appengine.api import urlfetch
 from django.utils         import simplejson as json
@@ -27,7 +27,7 @@ def auth_url( redirect_to="/token?service=facebook", scope='user_photos,friends_
     # https://www.facebook.com/dialog/oauth?client_id=YOUR_APP_ID&redirect_uri=YOUR_URL&scope=
     out  = "https://www.facebook.com/dialog/oauth?"
     dict = {
-        'client_id'    : facebook_app_id,
+        'client_id'    : facebook_api_key,
         'redirect_uri' : _domain + redirect_to,
         'scope'        : scope
     }
@@ -129,9 +129,9 @@ def import_photos( user, token, user_id=None, album_id=None ):
 def get_auth_token( code ):
     path   = "/oauth/access_token"
     params = {
-        'client_id'    : facebook_app_id,
+        'client_id'    : facebook_api_key,
         'redirect_uri' : _domain + '/token?service=facebook',
-        'client_secret': facebook_api_secret,
+        'client_secret': facebook_secret,
         'code'         : code
     }
 

@@ -18,7 +18,7 @@ from google.appengine.api        import users, urlfetch
 from google.appengine.ext        import webapp
 from google.appengine.ext.webapp import util
 
-from flickr        import Flickr
+import flickr
 import facebook
 
 from photo_service import Person
@@ -33,12 +33,14 @@ class MainHandler(webapp.RequestHandler):
         user = h.get_user_or_redirect( self )
         if not user: return
 
-        fb_friends = facebook.FacebookPerson.gql("WHERE owner = USER(:1)", user.nickname())
+        fb_friends     = facebook.FacebookPerson.gql("WHERE owner = USER(:1)", user.nickname())
+        flickr_friends = flickr.FlickrPerson.gql("WHERE owner = USER(:1)", user.nickname())
 
         template_values = h.template_params( self, user, **{
-            'flickr_auth'       : Flickr().auth_url(),
+            'flickr_auth'       : flickr.auth_url(),
             'facebook_auth'     : facebook.auth_url(),
-            'facebook_friends'  : fb_friends
+            'facebook_friends'  : fb_friends,
+            'flickr_friends'    : flickr_friends
         } )
 
         h.render_template( self, 'services/index.html', template_values )
@@ -52,8 +54,8 @@ class TokenHandler(webapp.RequestHandler):
         service = h.param(self, 'service')
         t = None
         if service == 'flickr':
-            token = Flickr().get_auth_token( h.param(self, 'frob') )
-            t = Flickr.update_or_create( { 'token':token, 'owner':user } )
+            token = flickr.get_auth_token( h.param(self, 'frob') )
+            t = flickr.FlickrToken.update_or_create( { 'token':token, 'owner':user } )
         elif service == 'facebook':
             token = facebook.get_auth_token( h.param(self,'code') )
             t = facebook.FacebookToken.update_or_create( { 'token':token, 'owner':user } )
@@ -93,12 +95,12 @@ class DownloadHandler(webapp.RequestHandler):
     def get(self):
         user = h.get_user_or_redirect( self )
         if not user: return
-        token = facebook.FacebookToken.for_user( user )
 
         service = h.param(self, 'service')
         type    = h.param(self, 'type')
 
         if service == 'facebook':
+            token = facebook.FacebookToken.for_user( user )
             if type == 'photos': # tagged photos
                 user_id  = h.param(self, 'user_id')
                 album_id = h.param(self, 'album_id')
@@ -111,7 +113,15 @@ class DownloadHandler(webapp.RequestHandler):
                 user_id = h.param(self, 'user_id')
                 facebook.import_albums( user, token, user_id )
                 self.redirect("/photos?service=facebook&user_id="+user_id)
-
+        elif service == 'flickr':
+            token = flickr.FlickrToken.for_user( user )
+            if type == 'photos':
+                None
+            elif type == 'people':
+                flickr.import_people( user, token )
+                self.redirect("/")
+            elif type == 'albums':
+                None
 
 def main():
     application = webapp.WSGIApplication([
