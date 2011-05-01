@@ -16,6 +16,9 @@ class FacebookPerson(Person):
 class FacebookToken(Token):
     service = 'facebook'
 
+class FacebookAlbum(Album):
+    service = 'facebook'
+
 class FacebookPhoto(Photo):
     service = 'facebook'
 
@@ -50,7 +53,7 @@ def import_people( user, token ):
 
     for p_data in people:
         # look to see if the person exists
-        person = FacebookPerson.gql("WHERE owner=USER(:1) and id = :2", user.nickname(), p_data['id'])
+        person = FacebookPerson.gql("WHERE owner = :1 and id = :2", user, p_data['id'])
         if person.count() == 0:
             print "Nobody named " + p_data['name']
             person = FacebookPerson( name=p_data['name'], id=p_data['id'], owner=user )
@@ -58,13 +61,47 @@ def import_people( user, token ):
         else:
             print "Somebody named " + p_data['name']
 
-def import_photos( user_id, user, token ):
+def import_albums( user, token, user_id ):
     # get the user
-    person = FacebookPerson.gql("WHERE id=:1 AND owner=USER(:2)", user_id, user.nickname())
+    person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
     if person.count() > 0:
         person = person[0]
     else:
         return
+
+    # get tagged photos
+    albums = get_albums( user_id, token )['data']
+
+    # normalize the data and save each photo
+    for p_data in albums:
+        album = {
+            'id'         : p_data['id'],
+            'owner'      : person,
+            'title'      : p_data['name'] if 'name' in p_data else '',
+            'created_at' : datetime.strptime( p_data['created_time'], "%Y-%m-%dT%H:%M:%S+0000" ),
+            'updated_at' : datetime.strptime( p_data['updated_time'], "%Y-%m-%dT%H:%M:%S+0000" )
+        }
+
+        key = FacebookAlbum.keygen( type="facebook", **album )
+        FacebookAlbum.get_or_insert( key, **album )
+
+def import_photos( user, token, user_id=None, album_id=None ):
+    # get the user
+    person = None
+    album  = None
+    if user_id:
+        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
+        if person.count() > 0:
+            person = person[0]
+        else:
+            return
+    elif album_id:
+        album = FacebookAlbum.gql("WHERE id=:1", album_id)
+        if album.count() > 0:
+            album = album[0]
+            person = album.owner
+        else:
+            return
 
     # get tagged photos
     photos = get_photos_of( user_id, token )['data']
@@ -101,6 +138,12 @@ def get_auth_token( code ):
 
 def get_friends( token ):
     path   = "/me/friends"
+    params = { 'access_token' : token.token }
+
+    return call( path, params )
+
+def get_albums( user_id, token ):
+    path = "/" + user_id + "/albums"
     params = { 'access_token' : token.token }
 
     return call( path, params )

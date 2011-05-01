@@ -76,10 +76,12 @@ class PhotoHandler(webapp.RequestHandler):
 
         if service == 'facebook':
             fb_photos = person.photos.filter('class =', 'FacebookPhoto')
+            fb_albums = person.albums.filter('class =', 'FacebookAlbum')
             fb_token  = facebook.FacebookToken.for_user(user)
             if fb_token:
                 fb_photos = fb_photos
                 template_values['photos'] = fb_photos
+                template_values['albums'] = fb_albums
             else:
                 print "no token"
         else:
@@ -99,12 +101,15 @@ class DownloadHandler(webapp.RequestHandler):
         if service == 'facebook':
             if type == 'photos': # tagged photos
                 user_id = h.param(self, 'user_id')
-                facebook.import_photos( user_id, user, token )
+                facebook.import_photos( user, token, user_id )
                 self.redirect("/photos?service=facebook&user_id="+user_id)
             elif type == 'people':
                 facebook.import_people( user, token )
                 self.redirect("/")
-            # elif type == 'album'
+            elif type == 'albums':
+                user_id = h.param(self, 'user_id')
+                facebook.import_albums( user, token, user_id )
+                self.redirect("/photos?service=facebook&user_id="+user_id)
 
 
 def main():

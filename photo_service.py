@@ -43,11 +43,17 @@ class Person( polymodel.PolyModel ):
 
 class Album( polymodel.PolyModel ):
     owner     = db.ReferenceProperty(Person, collection_name='albums')
+    id         = db.StringProperty()
+    title      = db.StringProperty()
+    desc       = db.StringProperty()
+    created_at = db.DateTimeProperty()
+    updated_at = db.DateTimeProperty()
+    latitude   = db.FloatProperty()
+    longitude  = db.FloatProperty()
 
-    title     = db.StringProperty()
-    desc      = db.StringProperty()
-    latitude  = db.FloatProperty()
-    longitude = db.FloatProperty()
+    @classmethod
+    def keygen( klass, type, owner, id, **misc ):
+        return "_".join([ type, owner.id, id ])
             
 class Photo( polymodel.PolyModel ):
     owner      = db.ReferenceProperty(Person, collection_name='photos')
