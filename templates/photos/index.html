@@ -13,7 +13,13 @@
       <p><a href="/download?service=facebook&type=albums&user_id={{ person.id }}">Download Albums</a></p>
       <ul>
         {% for album in albums %}
-          <li>{{ album.title }}</li>
+          <li><a href="/download?service=facebook&type=photos&user_id={{ person.id }}&album_id={{album.id}}">{{ album.title }}</a>
+            <ul>
+              {% for photo in album.photos %}
+                <li><img src="{{ photo.thumb_url }}" /></li>
+              {% endfor %}
+            </ul>
+          </li>
         {% endfor %}
       </ul>
 

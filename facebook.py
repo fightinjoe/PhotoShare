@@ -89,27 +89,28 @@ def import_photos( user, token, user_id=None, album_id=None ):
     # get the user
     person = None
     album  = None
-    if user_id:
-        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
-        if person.count() > 0:
-            person = person[0]
-        else:
-            return
-    elif album_id:
+    if album_id:
         album = FacebookAlbum.gql("WHERE id=:1", album_id)
         if album.count() > 0:
             album = album[0]
             person = album.owner
         else:
             return
+    elif user_id:
+        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
+        if person.count() > 0:
+            person = person[0]
+        else:
+            return
 
     # get tagged photos
-    photos = get_photos_of( user_id, token )['data']
+    photos = get_photos_of( album.id if album else person.id, token )['data']
 
     # normalize the data and save each photo
     for p_data in photos:
         photo = {
             'owner'      : person,
+            'album'      : album,
             'id'         : p_data['id'],
             'title'      : p_data['name'] if 'name' in p_data else '',
             'square_url' : p_data['images'][-1]['source'],

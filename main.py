@@ -70,12 +70,12 @@ class PhotoHandler(webapp.RequestHandler):
         user_id = h.param(self,'user_id')
         service = h.param(self, 'service')
         
-        person = Person.gql("WHERE id = :1 AND owner = USER(:2)", user_id, user.nickname())[0]
+        person = Person.gql("WHERE id = :1 AND owner = :2", user_id, user)[0]
 
         template_values = h.template_params( self, user, **{ 'person' : person })
 
         if service == 'facebook':
-            fb_photos = person.photos.filter('class =', 'FacebookPhoto')
+            fb_photos = person.photos.filter('class =', 'FacebookPhoto').filter('album =', None)
             fb_albums = person.albums.filter('class =', 'FacebookAlbum')
             fb_token  = facebook.FacebookToken.for_user(user)
             if fb_token:
@@ -100,8 +100,9 @@ class DownloadHandler(webapp.RequestHandler):
 
         if service == 'facebook':
             if type == 'photos': # tagged photos
-                user_id = h.param(self, 'user_id')
-                facebook.import_photos( user, token, user_id )
+                user_id  = h.param(self, 'user_id')
+                album_id = h.param(self, 'album_id')
+                facebook.import_photos( user, token, user_id, album_id )
                 self.redirect("/photos?service=facebook&user_id="+user_id)
             elif type == 'people':
                 facebook.import_people( user, token )
