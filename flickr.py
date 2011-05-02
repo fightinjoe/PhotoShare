@@ -97,24 +97,28 @@ def import_photos( user, token, user_id=None, album_id=None ):
     photos = get_photos( album.id if album else person.id, token )['photos']['photo']
 
     for photo in photos:
-        params = {
-            'owner'      : person,
-            'album'      : album,
-            'id'         : photo['id'],
-            'title'      : photo['title'],
-            'desc'       : photo['description']['_content'],
-            'square_url' : photo['url_s'],
-            'thumb_url'  : photo['url_t'],
-            'full_url'   : photo['url_o'],
-            'taken_on'   : datetime.strptime( photo['datetaken'], "%Y-%m-%d %H:%M:%S" ),
-            'width'      : photo['width_o'],
-            'height'     : photo['height_o'],
-            'latitude'   : photo['latitude'],
-            'longitude'  : photo['longitude']
-        }
+        size = None
+        if 'url_o' in photo              : size = "_o"
+        if not size and 'url_z' in photo : size = "_z"
+        if size:
+            params = {
+                'owner'      : person,
+                'album'      : album,
+                'id'         : photo['id'],
+                'title'      : photo['title'],
+                'desc'       : photo['description']['_content'],
+                'square_url' : photo['url_s'],
+                'thumb_url'  : photo['url_t'],
+                'full_url'   : photo['url'+size],
+                'taken_on'   : datetime.strptime( photo['datetaken'], "%Y-%m-%d %H:%M:%S" ),
+                'width'      : int(photo['width'+size]),
+                'height'     : int(photo['height'+size]),
+                'latitude'   : float(photo['latitude']),
+                'longitude'  : float(photo['longitude'])
+            }
 
-        key = FlickrPhoto.keygen( type="flickr", **photo )
-        FlickrPhoto.get_or_insert( key, **photo )
+            key = FlickrPhoto.keygen( type="flickr", **params )
+            FlickrPhoto.get_or_insert( key, **params )
 
 ############### API Methods ##################
 
@@ -125,9 +129,9 @@ def get_auth_token( frob ):
 def get_contact_list( opts={}, token=None ):
     return call('flickr.contacts.getList', opts, token=token)
 
-def get_photos( person, token, page=1, per_page=500 ):
+def get_photos( person_id, token, page=1, per_page=500 ):
     params = {
-        'user_id'  : person.id,
+        'user_id'  : person_id,
         'extras'   : 'description,date_taken,geo,url_t,url_s,url_z,url_o',
         'page'     : page,
         'per_page' : per_page

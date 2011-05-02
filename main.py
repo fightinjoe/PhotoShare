@@ -74,16 +74,24 @@ class PhotoHandler(webapp.RequestHandler):
         
         person = Person.gql("WHERE id = :1 AND owner = :2", user_id, user)[0]
 
-        template_values = h.template_params( self, user, **{ 'person' : person })
+        template_values = h.template_params( self, user, **{ 'person' : person, 'service' : service })
 
         if service == 'facebook':
             fb_photos = person.photos.filter('class =', 'FacebookPhoto').filter('album =', None)
             fb_albums = person.albums.filter('class =', 'FacebookAlbum')
             fb_token  = facebook.FacebookToken.for_user(user)
             if fb_token:
-                fb_photos = fb_photos
                 template_values['photos'] = fb_photos
                 template_values['albums'] = fb_albums
+            else:
+                print "no token"
+        elif service == 'flickr':
+            flickr_photos = person.photos.filter('class =', 'FlickrPhoto').filter('album =', None)
+            flickr_albums = person.albums.filter('class =', 'FlickrAlbum')
+            flickr_token  = flickr.FlickrToken.for_user(user)
+            if flickr_token:
+                template_values['photos'] = flickr_photos
+                template_values['albums'] = flickr_albums
             else:
                 print "no token"
         else:
@@ -116,7 +124,10 @@ class DownloadHandler(webapp.RequestHandler):
         elif service == 'flickr':
             token = flickr.FlickrToken.for_user( user )
             if type == 'photos':
-                None
+                user_id  = h.param(self, 'user_id')
+                album_id = h.param(self, 'album_id')
+                flickr.import_photos( user, token, user_id, album_id )
+                self.redirect("/photos?service=flickr&user_id="+user_id)
             elif type == 'people':
                 flickr.import_people( user, token )
                 self.redirect("/")

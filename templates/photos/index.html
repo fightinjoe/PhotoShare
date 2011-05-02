@@ -11,10 +11,10 @@
       <h1>Logged in as {{ user.nickname }}</h1>
       <h2>Photos of user {{ person.name }}</h2>
 
-      <p><a href="/download?service=facebook&type=albums&user_id={{ person.id }}">Download Albums</a></p>
+      <p><a href="/download?service={{service}}&type=albums&user_id={{ person.id }}">Download Albums</a></p>
       <ul>
         {% for album in albums %}
-          <li><a href="/download?service=facebook&type=photos&user_id={{ person.id }}&album_id={{album.id}}">{{ album.title }}</a>
+          <li><a href="/download?service={{service}}&type=photos&user_id={{ person.id }}&album_id={{album.id}}">{{ album.title }}</a>
             <ul>
               {% for photo in album.photos %}
                 <li><img src="{{ photo.thumb_url }}" /></li>
@@ -24,7 +24,7 @@
         {% endfor %}
       </ul>
 
-      <p><a href="/download?service=facebook&type=photos&user_id={{ person.id }}">Download Photos</a></p>
+      <p><a href="/download?service={{service}}&type=photos&user_id={{ person.id }}">Download Photos</a></p>
       <ul>
         {% for photo in photos %}
           <li><img src="{{ photo.thumb_url }}" /></li>

@@ -54,7 +54,7 @@ class Album( polymodel.PolyModel ):
 
     @classmethod
     def keygen( klass, type, owner, id, **misc ):
-        return "_".join([ type, owner.id, id ])
+        return "_".join([ type, str(owner.id), str(id) ])
             
 class Photo( polymodel.PolyModel ):
     owner      = db.ReferenceProperty(Person, collection_name='photos')
@@ -74,4 +74,4 @@ class Photo( polymodel.PolyModel ):
 
     @classmethod
     def keygen( klass, type, owner, id, **misc ):
-        return "_".join([ type, owner.id, id ])
+        return "_".join([ type, str(owner.id), str(id) ])
