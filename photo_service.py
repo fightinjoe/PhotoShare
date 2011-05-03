@@ -3,12 +3,12 @@ from google.appengine.ext.db import polymodel
 from google.appengine.api    import users
 
 class Token( polymodel.PolyModel ):
-    owner  = db.UserProperty()
-    token  = db.StringProperty()
+    user  = db.UserProperty()
+    token = db.StringProperty()
 
     @classmethod
     def keygen( klass, params ):
-        return klass.__name__ + params['owner'].user_id()
+        return klass.__name__ + params['user'].user_id()
 
     @classmethod
     def update_or_create( klass, params ):
@@ -26,8 +26,8 @@ class Token( polymodel.PolyModel ):
 
     @classmethod
     def for_user( klass, user ):
-        token = klass.gql("WHERE owner = USER(:1)", user.nickname())
-        if token.count > 0:
+        token = klass.gql("WHERE user = :1", user)
+        if token.count() > 0:
             return token[0]
         else:
             return None

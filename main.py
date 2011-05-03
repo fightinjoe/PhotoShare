@@ -45,6 +45,20 @@ class MainHandler(webapp.RequestHandler):
 
         h.render_template( self, 'services/index.html', template_values )
 
+class SettingsHandler(webapp.RequestHandler):
+    def get(self):
+        user = h.get_user_or_redirect( self )
+        if not user: return
+
+        template_values = h.template_params( self, user, **{
+            'flickr_auth'    : flickr.auth_url(),
+            'facebook_auth'  : facebook.auth_url(),
+            'facebook_token' : facebook.FacebookToken.for_user(user),
+            'flickr_token'   : flickr.FlickrToken.for_user(user)
+        } )
+
+        h.render_template( self, 'settings.html', template_values )
+
 class TokenHandler(webapp.RequestHandler):
     # callback URL for web authentication
     def get(self):
@@ -55,12 +69,12 @@ class TokenHandler(webapp.RequestHandler):
         t = None
         if service == 'flickr':
             token = flickr.get_auth_token( h.param(self, 'frob') )
-            t = flickr.FlickrToken.update_or_create( { 'token':token, 'owner':user } )
+            t = flickr.FlickrToken.update_or_create( { 'token':token, 'user':user } )
         elif service == 'facebook':
             token = facebook.get_auth_token( h.param(self,'code') )
-            t = facebook.FacebookToken.update_or_create( { 'token':token, 'owner':user } )
+            t = facebook.FacebookToken.update_or_create( { 'token':token, 'user':user } )
 
-        self.redirect( '/' )
+        self.redirect( '/settings' )
         # self.response.headers['Content-Type'] = 'text/plain'
         # self.response.out.write( str(t) )
 
@@ -139,8 +153,9 @@ def main():
         ('/',         MainHandler),
         ('/token',    TokenHandler),
         ('/photos',   PhotoHandler),
-        ('/download', DownloadHandler)],
-        debug=True)
+        ('/download', DownloadHandler),
+        ('/settings', SettingsHandler)
+    ],debug=True)
     util.run_wsgi_app(application)
 
 if __name__ == '__main__':

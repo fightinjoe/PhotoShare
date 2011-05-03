@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <title>Photo Share: Settings</title>
+  </head>
+  <body>
+    <div id="header">
+      <a href="/">Photos</a>
+      <a href="{{ logout_url }}">Logout</a>
+    </div>
+    <div id="meat">
+
+      <div class="token">
+        <strong>Flickr</strong>:
+        {% ifequal flickr_token None %}
+          You are NOT logged in.
+          <a href="{{ flickr_auth }}"><button>Login to Flickr</button></a>
+        {% else %}
+          You are logged in.
+          <a href="/logout?service=flickr">Logout</a>
+        {% endifequal %}
+      </div>
+
+      <div class="token">
+        <strong>Facebook</strong>:
+        {% ifequal facebook_token None %}
+          You are NOT logged in.
+          <a href="{{ facebook_auth }}"><button>Login to Facebook</button></a>
+        {% else %}
+          You are logged in.
+          <a href="/logout?service=facebook">Logout</a>
+        {% endifequal %}
+      </div>
+
+    </div>
+  </body>
+</html>
