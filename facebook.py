@@ -98,7 +98,7 @@ def import_photos( user, token, owner_id=None, album_id=None ):
         else:
             return
     elif owner_id:
-        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", owner_id, user)
+        person = FacebookPerson.gql("WHERE user = :1 AND id = :2", user, owner_id)
         if person.count() > 0:
             person = person[0]
         else:
