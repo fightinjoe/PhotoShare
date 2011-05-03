@@ -39,7 +39,7 @@ def _request_url( method, params, do_sign=True ):
 
     return url + urllib.urlencode( params )
 
-def call( api_method, params, fn=lambda d:d, token=None ):
+def call( api_method, params, token=None ):
     if(token):
         params.update( {'auth_token':token.token} )
 
@@ -59,6 +59,7 @@ def import_people( user, token ):
 
     for c_data in contacts["contacts"]["contact"]:
         contact = {
+            'user'   : user,
             'id'     : c_data['nsid'],
             'nick'   : c_data['username'],
             'name'   : c_data['realname'],
@@ -74,7 +75,7 @@ def import_people( user, token ):
         else:
             print "Somebody named " + contact['name']
 
-def import_photos( user, token, user_id=None, album_id=None ):
+def import_photos( user, token, owner_id=None, album_id=None ):
     # get the user
     person = None
     album  = None
@@ -86,8 +87,8 @@ def import_photos( user, token, user_id=None, album_id=None ):
             person = album.owner
         else:
             return
-    elif user_id:
-        person = FlickrPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
+    elif owner_id:
+        person = FlickrPerson.gql("WHERE id=:1 AND user = :2", owner_id, user)
         if person.count() > 0:
             person = person[0]
         else:
@@ -102,6 +103,7 @@ def import_photos( user, token, user_id=None, album_id=None ):
         if not size and 'url_z' in photo : size = "_z"
         if size:
             params = {
+                'user'       : user,
                 'owner'      : person,
                 'album'      : album,
                 'id'         : photo['id'],
@@ -123,13 +125,13 @@ def import_photos( user, token, user_id=None, album_id=None ):
 ############### API Methods ##################
 
 def get_auth_token( frob ):
-    fn = lambda d: d.getElementsByTagName("token")[0].childNodes[0].data
-    return call( 'flickr.auth.getToken', {'frob':frob}, fn )
+    auth = call( 'flickr.auth.getToken', {'frob':frob} )
+    return auth['auth']['token']['_content']
 
 def get_contact_list( opts={}, token=None ):
     return call('flickr.contacts.getList', opts, token=token)
 
-def get_photos( person_id, token, page=1, per_page=500 ):
+def get_photos( person_id, token, page=1, per_page=100 ):
     params = {
         'user_id'  : person_id,
         'extras'   : 'description,date_taken,geo,url_t,url_s,url_z,url_o',

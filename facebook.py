@@ -56,25 +56,26 @@ def import_people( user, token ):
         person = FacebookPerson.gql("WHERE owner = :1 and id = :2", user, p_data['id'])
         if person.count() == 0:
             print "Nobody named " + p_data['name']
-            person = FacebookPerson( name=p_data['name'], id=p_data['id'], owner=user )
+            person = FacebookPerson( user=user, name=p_data['name'], id=p_data['id'] )
             person.put()
         else:
             print "Somebody named " + p_data['name']
 
-def import_albums( user, token, user_id ):
+def import_albums( user, token, owner_id ):
     # get the user
-    person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
+    person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", owner_id, user)
     if person.count() > 0:
         person = person[0]
     else:
         return
 
     # get tagged photos
-    albums = get_albums( user_id, token )['data']
+    albums = get_albums( owner_id, token )['data']
 
     # normalize the data and save each photo
     for p_data in albums:
         album = {
+            'user'       : user,
             'id'         : p_data['id'],
             'owner'      : person,
             'title'      : p_data['name'] if 'name' in p_data else '',
@@ -85,7 +86,7 @@ def import_albums( user, token, user_id ):
         key = FacebookAlbum.keygen( type="facebook", **album )
         FacebookAlbum.get_or_insert( key, **album )
 
-def import_photos( user, token, user_id=None, album_id=None ):
+def import_photos( user, token, owner_id=None, album_id=None ):
     # get the user
     person = None
     album  = None
@@ -96,8 +97,8 @@ def import_photos( user, token, user_id=None, album_id=None ):
             person = album.owner
         else:
             return
-    elif user_id:
-        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", user_id, user)
+    elif owner_id:
+        person = FacebookPerson.gql("WHERE id=:1 AND owner = :2", owner_id, user)
         if person.count() > 0:
             person = person[0]
         else:
@@ -109,6 +110,7 @@ def import_photos( user, token, user_id=None, album_id=None ):
     # normalize the data and save each photo
     for p_data in photos:
         photo = {
+            'user'       : user,
             'owner'      : person,
             'album'      : album,
             'id'         : p_data['id'],
@@ -143,14 +145,14 @@ def get_friends( token ):
 
     return call( path, params )
 
-def get_albums( user_id, token ):
-    path = "/" + user_id + "/albums"
+def get_albums( ownder_id, token ):
+    path = "/" + owner_id + "/albums"
     params = { 'access_token' : token.token }
 
     return call( path, params )
 
-def get_photos_of( user_id, token ):
-    path   = "/" + user_id + "/photos"
+def get_photos_of( owner_id, token ):
+    path   = "/" + owner_id + "/photos"
     params = { 'access_token' : token.token }
 
     return call( path, params )

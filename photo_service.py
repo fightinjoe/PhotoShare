@@ -33,17 +33,18 @@ class Token( polymodel.PolyModel ):
             return None
 
 class Person( polymodel.PolyModel ):
-    id    = db.StringProperty()
-    name  = db.StringProperty()
-    nick  = db.StringProperty()
-    owner = db.UserProperty()
+    id   = db.StringProperty()
+    name = db.StringProperty()
+    nick = db.StringProperty()
+    user = db.UserProperty()
 
     @classmethod
     def keygen(klass, name, owner):
         return "_".join( id, name, owner.user_id() )
 
 class Album( polymodel.PolyModel ):
-    owner     = db.ReferenceProperty(Person, collection_name='albums')
+    user       = db.UserProperty()
+    owner      = db.ReferenceProperty(Person, collection_name='albums')
     id         = db.StringProperty()
     title      = db.StringProperty()
     desc       = db.StringProperty()
@@ -57,9 +58,9 @@ class Album( polymodel.PolyModel ):
         return "_".join([ type, str(owner.id), str(id) ])
             
 class Photo( polymodel.PolyModel ):
+    user       = db.UserProperty()
     owner      = db.ReferenceProperty(Person, collection_name='photos')
     album      = db.ReferenceProperty(Album,  collection_name='photos')
-
     id         = db.StringProperty()
     title      = db.StringProperty( multiline=True )
     desc       = db.StringProperty()

@@ -33,8 +33,8 @@ class MainHandler(webapp.RequestHandler):
         user = h.get_user_or_redirect( self )
         if not user: return
 
-        fb_friends     = facebook.FacebookPerson.gql("WHERE owner = USER(:1)", user.nickname())
-        flickr_friends = flickr.FlickrPerson.gql("WHERE owner = USER(:1)", user.nickname())
+        fb_friends     = facebook.FacebookPerson.gql("WHERE user = :1", user)
+        flickr_friends = flickr.FlickrPerson.gql("WHERE user = :1", user)
 
         template_values = h.template_params( self, user, **{
             'flickr_auth'       : flickr.auth_url(),
@@ -72,7 +72,7 @@ class PhotoHandler(webapp.RequestHandler):
         user_id = h.param(self,'user_id')
         service = h.param(self, 'service')
         
-        person = Person.gql("WHERE id = :1 AND owner = :2", user_id, user)[0]
+        person = Person.gql("WHERE id = :1 AND user = :2", user_id, user)[0]
 
         template_values = h.template_params( self, user, **{ 'person' : person, 'service' : service })
 
@@ -110,24 +110,24 @@ class DownloadHandler(webapp.RequestHandler):
         if service == 'facebook':
             token = facebook.FacebookToken.for_user( user )
             if type == 'photos': # tagged photos
-                user_id  = h.param(self, 'user_id')
+                owner_id  = h.param(self, 'user_id')
                 album_id = h.param(self, 'album_id')
-                facebook.import_photos( user, token, user_id, album_id )
-                self.redirect("/photos?service=facebook&user_id="+user_id)
+                facebook.import_photos( user, token, owner_id, album_id )
+                self.redirect("/photos?service=facebook&user_id="+owner_id)
             elif type == 'people':
                 facebook.import_people( user, token )
                 self.redirect("/")
             elif type == 'albums':
-                user_id = h.param(self, 'user_id')
-                facebook.import_albums( user, token, user_id )
-                self.redirect("/photos?service=facebook&user_id="+user_id)
+                owner_id = h.param(self, 'user_id')
+                facebook.import_albums( user, token, owner_id )
+                self.redirect("/photos?service=facebook&user_id="+owner_id)
         elif service == 'flickr':
             token = flickr.FlickrToken.for_user( user )
             if type == 'photos':
-                user_id  = h.param(self, 'user_id')
+                owner_id = h.param(self, 'user_id')
                 album_id = h.param(self, 'album_id')
-                flickr.import_photos( user, token, user_id, album_id )
-                self.redirect("/photos?service=flickr&user_id="+user_id)
+                flickr.import_photos( user, token, owner_id, album_id )
+                self.redirect("/photos?service=flickr&user_id="+owner_id)
             elif type == 'people':
                 flickr.import_people( user, token )
                 self.redirect("/")
